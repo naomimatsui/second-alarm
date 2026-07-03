@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+<title>ジャストコール ー 予約電話タイマー</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --ink: #1d1d1f;
+    --sub: #86868b;
+    --line: #e5e5ea;
+    --blue: #0071e3;
+    --blue-dark: #0058b0;
+    --red: #ff3b30;
+    --green: #34c759;
+    --green-dark: #248a3d;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans",
+      "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: max(28px, env(safe-area-inset-top)) 18px max(28px, env(safe-area-inset-bottom));
+  }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 22px;
+  }
+
+  header .mark {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 14px;
+    border-radius: 16px;
+    background: linear-gradient(145deg, var(--blue), var(--blue-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(0, 113, 227, 0.35);
+  }
+
+  header .mark svg { width: 28px; height: 28px; }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+  }
+
+  header p {
+    font-size: 14px;
+    color: var(--sub);
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 26px 22px;
+    box-shadow: var(--shadow);
+  }
+
+  .card + .card { margin-top: 16px; }
+
+  .field { margin-bottom: 22px; }
+  .field:last-of-type { margin-bottom: 26px; }
+
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sub);
+    margin-bottom: 10px;
+  }
+
+  .time-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f5f5f7;
+    border-radius: 16px;
+    padding: 6px;
+  }
+
+  .time-row select {
+    flex: 1;
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    background: var(--card);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+    padding: 12px 4px;
+    color: var(--ink);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  .time-row .colon {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--sub);
+    width: 10px;
+    text-align: center;
+  }
+
+  input[type="tel"] {
+    width: 100%;
+    font-family: inherit;
+    font-size: 20px;
+    font-weight: 600;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1.5px solid var(--line);
+    background: #fafafa;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  input[type="tel"]:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
+    background: #fff;
+  }
+
+  input[type="tel"]::placeholder { color: #c7c7cc; }
+
+  button, .btn {
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .primary-btn {
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    padding: 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+    box-shadow: 0 10px 22px rgba(0, 113, 227, 0.32);
+    transition: transform 0.12s ease;
+  }
+
+  .primary-btn:active { transform: scale(0.97); }
+
+  .secondary-btn {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sub);
+    background: transparent;
+    padding: 10px;
+    margin-top: 4px;
+  }
+
+  #statusCard { text-align: center; }
+
+  .target-time {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sub);
+    margin-bottom: 4px;
+  }
+
+  .target-time span { color: var(--blue); font-weight: 700; }
+
+  .phone-display {
+    font-size: 13px;
+    color: var(--sub);
+    margin-bottom: 20px;
+  }
+
+  .countdown-wrap {
+    padding: 14px 0 6px;
+    min-height: 128px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .countdown {
+    font-variant-numeric: tabular-nums;
+    font-size: 44px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    transition: color 0.2s, font-size 0.2s;
+  }
+
+  .countdown.warn {
+    font-size: 92px;
+    color: var(--red);
+  }
+
+  .countdown.now {
+    font-size: 40px;
+    color: var(--red);
+    animation: pulse 0.6s ease infinite alternate;
+  }
+
+  @keyframes pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.06); }
+  }
+
+  .call-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 19px;
+    font-weight: 700;
+    color: #fff;
+    padding: 18px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    box-shadow: 0 14px 28px rgba(52, 199, 89, 0.4);
+    margin-top: 6px;
+    animation: glow 1s ease infinite alternate;
+  }
+
+  .call-btn.show { display: flex; }
+
+  .call-btn svg { width: 22px; height: 22px; }
+
+  @keyframes glow {
+    from { box-shadow: 0 14px 28px rgba(52, 199, 89, 0.35); }
+    to { box-shadow: 0 18px 34px rgba(52, 199, 89, 0.6); }
+  }
+
+  .hidden { display: none !important; }
+
+  footer {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 11.5px;
+    color: #b0b0b5;
+  }
+</style>
+</head>
+
+<body>
+  <div class="app">
+    <header>
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.4.6 3.7.6.6 0 1 .4 1 1v3.6c0 .6-.4 1-1 1C10.6 21.2 2.8 13.4 2.8 3.9c0-.6.4-1 1-1H7.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.7.1.4 0 .8-.2 1.1L6.6 10.8z" fill="white"/>
+        </svg>
+      </div>
+      <h1>ジャストコール</h1>
+      <p>予約開始のジャストタイミングで、<br />迷わず電話をかける。</p>
+    </header>
+
+    <div class="card" id="setupCard">
+      <div class="field">
+        <label>予約開始時刻</label>
+        <div class="time-row">
+          <select id="hourSelect" aria-label="時"></select>
+          <span class="colon">:</span>
+          <select id="minuteSelect" aria-label="分"></select>
+          <span class="colon">:</span>
+          <select id="secondSelect" aria-label="秒"></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="phoneNumber">電話番号</label>
+        <input type="tel" id="phoneNumber" inputmode="tel" placeholder="09012345678" autocomplete="tel" />
+      </div>
+
+      <button class="primary-btn" id="startBtn">スタンバイ開始</button>
+    </div>
+
+    <div class="card hidden" id="statusCard">
+      <div class="target-time">設定時刻 <span id="targetDisplay">--:--:--</span></div>
+      <div class="phone-display" id="phoneDisplay"></div>
+
+      <div class="countdown-wrap">
+        <div class="countdown" id="countdown">--</div>
+      </div>
+
+      <a class="call-btn" id="callBtn" href="tel:">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.4.6 3.7.6.6 0 1 .4 1 1v3.6c0 .6-.4 1-1 1C10.6 21.2 2.8 13.4 2.8 3.9c0-.6.4-1 1-1H7.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.7.1.4 0 .8-.2 1.1L6.6 10.8z" fill="white"/>
+        </svg>
+        今すぐ電話
+      </a>
+
+      <button class="secondary-btn" id="cancelBtn">設定に戻る</button>
+    </div>
+
+    <footer>Just Call ー 予約電話タイマー</footer>
+  </div>
+
+  <script>
+    const hourSelect = document.getElementById("hourSelect");
+    const minuteSelect = document.getElementById("minuteSelect");
+    const secondSelect = document.getElementById("secondSelect");
+    const phoneNumberInput = document.getElementById("phoneNumber");
+    const startBtn = document.getElementById("startBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const setupCard = document.getElementById("setupCard");
+    const statusCard = document.getElementById("statusCard");
+    const targetDisplay = document.getElementById("targetDisplay");
+    const phoneDisplay = document.getElementById("phoneDisplay");
+    const countdownEl = document.getElementById("countdown");
+    const callBtn = document.getElementById("callBtn");
+
+    function fillSelect(select, max) {
+      for (let i = 0; i < max; i++) {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = String(i).padStart(2, "0");
+        select.appendChild(opt);
+      }
+    }
+
+    fillSelect(hourSelect, 24);
+    fillSelect(minuteSelect, 60);
+    fillSelect(secondSelect, 60);
+
+    (function setDefaultTime() {
+      const now = new Date();
+      hourSelect.value = now.getHours();
+      minuteSelect.value = now.getMinutes();
+      secondSelect.value = 0;
+    })();
+
+    let alarmDate = null;
+    let timer = null;
+    let lastSpokenCount = null;
+    let alarmLoopId = null;
+    let audioContext = null;
+
+    function unlockAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === "suspended") {
+        audioContext.resume();
+      }
+    }
+
+    function speak(text) {
+      if (!("speechSynthesis" in window)) return;
+      const voice = new SpeechSynthesisUtterance(text);
+      voice.lang = "ja-JP";
+      voice.rate = 1.0;
+      speechSynthesis.speak(voice);
+    }
+
+    function beepBurst(times) {
+      unlockAudio();
+      for (let i = 0; i < times; i++) {
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.frequency.value = 880;
+        gain.gain.value = 0.25;
+        const start = audioContext.currentTime + i * 0.3;
+        oscillator.start(start);
+        oscillator.stop(start + 0.16);
+      }
+    }
+
+    function startAlarmSound() {
+      beepBurst(4);
+      alarmLoopId = setInterval(() => beepBurst(4), 1400);
+    }
+
+    function stopAlarmSound() {
+      if (alarmLoopId) {
+        clearInterval(alarmLoopId);
+        alarmLoopId = null;
+      }
+    }
+
+    function cleanPhoneNumber(raw) {
+      return raw.replace(/[^0-9+]/g, "");
+    }
+
+    function startStandby() {
+      unlockAudio();
+
+      const hour = Number(hourSelect.value);
+      const minute = Number(minuteSelect.value);
+      const second = Number(secondSelect.value);
+      const phoneRaw = phoneNumberInput.value.trim();
+
+      if (!phoneRaw) {
+        alert("電話番号を入力してください");
+        return;
+      }
+
+      const cleanNumber = cleanPhoneNumber(phoneRaw);
+      if (!cleanNumber) {
+        alert("電話番号の形式を確認してください");
+        return;
+      }
+
+      const now = new Date();
+      alarmDate = new Date();
+      alarmDate.setHours(hour, minute, second, 0);
+
+      if (alarmDate <= now) {
+        alarmDate.setDate(alarmDate.getDate() + 1);
+      }
+
+      lastSpokenCount = null;
+      stopAlarmSound();
+
+      targetDisplay.textContent =
+        String(hour).padStart(2, "0") + ":" +
+        String(minute).padStart(2, "0") + ":" +
+        String(second).padStart(2, "0");
+
+      phoneDisplay.textContent = "発信先：" + phoneRaw;
+
+      callBtn.href = "tel:" + cleanNumber;
+      callBtn.classList.remove("show");
+      countdownEl.classList.remove("warn", "now");
+      countdownEl.textContent = "待機中";
+
+      setupCard.classList.add("hidden");
+      statusCard.classList.remove("hidden");
+
+      speak("スタンバイを開始しました");
+
+      if (timer) clearInterval(timer);
+      timer = setInterval(tick, 100);
+    }
+
+    function backToSetup() {
+      if (timer) clearInterval(timer);
+      stopAlarmSound();
+      speechSynthesis.cancel();
+      callBtn.classList.remove("show");
+      countdownEl.classList.remove("warn", "now");
+      statusCard.classList.add("hidden");
+      setupCard.classList.remove("hidden");
+    }
+
+    function tick() {
+      const now = new Date();
+      const diff = alarmDate - now;
+
+      if (diff <= 0) {
+        clearInterval(timer);
+        countdownEl.classList.remove("warn");
+        countdownEl.classList.add("now");
+        countdownEl.textContent = "今です！";
+        callBtn.classList.add("show");
+        startAlarmSound();
+        speak("今です");
+        return;
+      }
+
+      const secondsLeft = Math.ceil(diff / 1000);
+
+      if (secondsLeft <= 10) {
+        countdownEl.classList.add("warn");
+        countdownEl.textContent = secondsLeft;
+      } else {
+        countdownEl.classList.remove("warn");
+        const minutes = Math.floor(secondsLeft / 60);
+        const seconds = secondsLeft % 60;
+        countdownEl.textContent =
+          String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
+      }
+
+      if (secondsLeft <= 5 && secondsLeft > 0 && lastSpokenCount !== secondsLeft) {
+        lastSpokenCount = secondsLeft;
+        speak(String(secondsLeft));
+      }
+    }
+
+    callBtn.addEventListener("click", () => {
+      stopAlarmSound();
+    });
+
+    startBtn.addEventListener("click", startStandby);
+    cancelBtn.addEventListener("click", backToSetup);
+  </script>
+</body>
+</html>
