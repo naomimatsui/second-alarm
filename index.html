@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-<title>ジャストコール ー 予約開始に、秒で勝つ。</title>
+<title>ジャストアラーム ー その瞬間を、逃さない。</title>
 <style>
   :root {
     --bg: #000000;
@@ -15,7 +15,6 @@
     --sub: #8e8e93;
     --sub-dim: #636366;
     --blue: #0a84ff;
-    --blue-dim: #0060c2;
     --shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   }
 
@@ -124,24 +123,6 @@
     text-align: center;
   }
 
-  input[type="tel"] {
-    width: 100%;
-    font-family: inherit;
-    font-variant-numeric: tabular-nums;
-    font-size: 19px;
-    font-weight: 500;
-    padding: 15px 16px;
-    border-radius: 14px;
-    border: 1px solid var(--line);
-    background: var(--card-soft);
-    color: var(--ink);
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  input[type="tel"]:focus { border-color: var(--blue); }
-  input[type="tel"]::placeholder { color: var(--sub-dim); }
-
   button, .btn {
     font-family: inherit;
     border: none;
@@ -177,11 +158,34 @@
 
   .secondary-btn:active { opacity: 0.6; }
 
+  .notice {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--card-soft);
+    border: 1px solid var(--line);
+  }
+
+  .notice .mark {
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--blue);
+  }
+
+  .notice p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--sub);
+  }
+
   #statusCard { text-align: center; }
 
   .meta-row {
-    display: flex;
-    justify-content: space-between;
     font-size: 12.5px;
     color: var(--sub);
     margin-bottom: 26px;
@@ -219,42 +223,6 @@
     text-shadow: 0 0 34px rgba(10, 132, 255, 0.55);
   }
 
-  .countdown.now {
-    font-size: 38px;
-    font-weight: 700;
-    color: var(--ink);
-    animation: flash 0.7s ease infinite alternate;
-  }
-
-  @keyframes flash {
-    from { opacity: 1; }
-    to { opacity: 0.55; }
-  }
-
-  .call-btn {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    font-size: 18px;
-    font-weight: 600;
-    color: #fff;
-    padding: 20px;
-    border-radius: 16px;
-    background: var(--blue);
-    margin-top: 8px;
-    animation: glow 1.1s ease infinite alternate;
-  }
-
-  .call-btn.show { display: flex; }
-
-  .call-btn svg { width: 21px; height: 21px; }
-
-  @keyframes glow {
-    from { box-shadow: 0 0 0 0 rgba(10, 132, 255, 0.35); }
-    to { box-shadow: 0 0 0 14px rgba(10, 132, 255, 0); }
-  }
-
   .hidden { display: none !important; }
 
   footer {
@@ -264,20 +232,62 @@
     letter-spacing: 0.06em;
     color: var(--sub-dim);
   }
+
+  /* 0秒到達時のフルスクリーン表示 */
+  .now-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    background: #000000;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .now-overlay.show { display: flex; }
+
+  .now-overlay .now-text {
+    font-size: clamp(64px, 20vw, 140px);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+    text-shadow: 0 0 60px rgba(10, 132, 255, 0.8);
+    animation: flash 0.7s ease infinite alternate;
+  }
+
+  @keyframes flash {
+    from { opacity: 1; }
+    to { opacity: 0.5; }
+  }
+
+  .now-overlay .close-btn {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    padding: 13px 30px;
+    border-radius: 999px;
+    width: auto;
+  }
 </style>
 </head>
 
 <body>
   <div class="app">
     <header>
-      <div class="eyebrow">RESERVATION CALL TIMER</div>
-      <h1>ジャストコール</h1>
-      <p class="tagline">予約開始に、秒で勝つ。</p>
+      <div class="eyebrow">SECOND-PRECISE ALARM</div>
+      <h1>ジャストアラーム</h1>
+      <p class="tagline">その瞬間を、逃さない。</p>
     </header>
 
     <div class="card" id="setupCard">
       <div class="field">
-        <label>予約開始時刻</label>
+        <label>アラーム時刻</label>
         <div class="time-row">
           <select id="hourSelect" aria-label="時"></select>
           <span class="colon">:</span>
@@ -287,50 +297,46 @@
         </div>
       </div>
 
-      <div class="field">
-        <label for="phoneNumber">電話番号</label>
-        <input type="tel" id="phoneNumber" inputmode="tel" placeholder="09012345678" autocomplete="tel" />
-      </div>
+      <button class="primary-btn" id="startBtn">アラームをセット</button>
 
-      <button class="primary-btn" id="startBtn">スタンバイ開始</button>
+      <div class="notice">
+        <span class="mark">ⓘ</span>
+        <p>正確に鳴らすには、この画面を開いたままにしてください。LINEなど別アプリを開いている間は、音が遅れたり鳴らない場合があります。</p>
+      </div>
     </div>
 
     <div class="card hidden" id="statusCard">
       <div class="meta-row">
-        <span>設定時刻 <span class="value" id="targetDisplay">--:--:--</span></span>
-        <span id="phoneDisplay" class="value"></span>
+        設定時刻 <span class="value" id="targetDisplay">--:--:--</span>
       </div>
 
       <div class="countdown-wrap">
         <div class="countdown" id="countdown">--</div>
       </div>
 
-      <a class="call-btn" id="callBtn" href="tel:">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.4.6 3.7.6.6 0 1 .4 1 1v3.6c0 .6-.4 1-1 1C10.6 21.2 2.8 13.4 2.8 3.9c0-.6.4-1 1-1H7.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.7.1.4 0 .8-.2 1.1L6.6 10.8z" fill="white"/>
-        </svg>
-        今すぐ電話する
-      </a>
-
       <button class="secondary-btn" id="cancelBtn">設定に戻る</button>
     </div>
 
-    <footer>JUST CALL</footer>
+    <footer>JUST ALARM</footer>
+  </div>
+
+  <div class="now-overlay" id="nowOverlay">
+    <div class="now-text">今です！</div>
+    <button class="close-btn" id="closeOverlayBtn">閉じる</button>
   </div>
 
   <script>
     const hourSelect = document.getElementById("hourSelect");
     const minuteSelect = document.getElementById("minuteSelect");
     const secondSelect = document.getElementById("secondSelect");
-    const phoneNumberInput = document.getElementById("phoneNumber");
     const startBtn = document.getElementById("startBtn");
     const cancelBtn = document.getElementById("cancelBtn");
     const setupCard = document.getElementById("setupCard");
     const statusCard = document.getElementById("statusCard");
     const targetDisplay = document.getElementById("targetDisplay");
-    const phoneDisplay = document.getElementById("phoneDisplay");
     const countdownEl = document.getElementById("countdown");
-    const callBtn = document.getElementById("callBtn");
+    const nowOverlay = document.getElementById("nowOverlay");
+    const closeOverlayBtn = document.getElementById("closeOverlayBtn");
 
     function fillSelect(select, max) {
       for (let i = 0; i < max; i++) {
@@ -402,28 +408,12 @@
       }
     }
 
-    function cleanPhoneNumber(raw) {
-      return raw.replace(/[^0-9+]/g, "");
-    }
-
     function startStandby() {
       unlockAudio();
 
       const hour = Number(hourSelect.value);
       const minute = Number(minuteSelect.value);
       const second = Number(secondSelect.value);
-      const phoneRaw = phoneNumberInput.value.trim();
-
-      if (!phoneRaw) {
-        alert("電話番号を入力してください");
-        return;
-      }
-
-      const cleanNumber = cleanPhoneNumber(phoneRaw);
-      if (!cleanNumber) {
-        alert("電話番号の形式を確認してください");
-        return;
-      }
 
       const now = new Date();
       alarmDate = new Date();
@@ -441,17 +431,14 @@
         String(minute).padStart(2, "0") + ":" +
         String(second).padStart(2, "0");
 
-      phoneDisplay.textContent = phoneRaw;
-
-      callBtn.href = "tel:" + cleanNumber;
-      callBtn.classList.remove("show");
-      countdownEl.classList.remove("warn", "now");
+      countdownEl.classList.remove("warn");
       countdownEl.textContent = "待機中";
+      nowOverlay.classList.remove("show");
 
       setupCard.classList.add("hidden");
       statusCard.classList.remove("hidden");
 
-      speak("スタンバイを開始しました");
+      speak("アラームをセットしました");
 
       if (timer) clearInterval(timer);
       timer = setInterval(tick, 100);
@@ -461,8 +448,8 @@
       if (timer) clearInterval(timer);
       stopAlarmSound();
       speechSynthesis.cancel();
-      callBtn.classList.remove("show");
-      countdownEl.classList.remove("warn", "now");
+      nowOverlay.classList.remove("show");
+      countdownEl.classList.remove("warn");
       statusCard.classList.add("hidden");
       setupCard.classList.remove("hidden");
     }
@@ -474,9 +461,8 @@
       if (diff <= 0) {
         clearInterval(timer);
         countdownEl.classList.remove("warn");
-        countdownEl.classList.add("now");
         countdownEl.textContent = "今です";
-        callBtn.classList.add("show");
+        nowOverlay.classList.add("show");
         startAlarmSound();
         speak("今です");
         return;
@@ -501,8 +487,10 @@
       }
     }
 
-    callBtn.addEventListener("click", () => {
+    closeOverlayBtn.addEventListener("click", () => {
       stopAlarmSound();
+      nowOverlay.classList.remove("show");
+      backToSetup();
     });
 
     startBtn.addEventListener("click", startStandby);
